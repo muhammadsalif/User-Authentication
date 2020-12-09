@@ -33,7 +33,7 @@ app.post("/signup", (req, res, next) => {
         password: req.body.password
     })
     res.send("Sign up successfully")
-    console.log("User Signup successfully :", users)
+    console.log("User Signup successfully :", req.body.userName)
 })
 
 app.post("/login", (req, res, next) => {
