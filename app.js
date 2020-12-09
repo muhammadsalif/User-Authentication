@@ -22,7 +22,7 @@ let sessions = [
     { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
 ]
 
-app.post("/signup", (req, res, next) => {
+app.post("/signup", (req, res) => {
     if (!req.body || !req.body.userName || !req.body.password) {
         res.send("Information is missing")
         return;
@@ -36,7 +36,7 @@ app.post("/signup", (req, res, next) => {
     console.log("User Signup successfully :", req.body.userName)
 })
 
-app.post("/login", (req, res, next) => {
+app.post("/login", (req, res) => {
 
     if (!req.body || !req.body.userName || !req.body.password) {
         res.send("Username or password is Missing")
