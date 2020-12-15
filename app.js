@@ -49,17 +49,17 @@ app.post("/login", (req, res) => {
         Bcrypt.varifyHash(req.body.password, currentUser.password)
             .then(result => {
                 if (result) {
-                    let successfullyVerified = result;
+                    let passwordVerified = result;
                     console.log("matched");
                 } else {
-                    successfullyVerified = false
+                    passwordVerified = false
                     console.log("not matched");
                 }
             }).catch(e => {
                 console.log("error: ", e)
             })
 
-        if (successfullyVerified) {
+        if (passwordVerified) {
 
             // make token using ip, browser name, 
             let tokenData = {
