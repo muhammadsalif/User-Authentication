@@ -44,7 +44,22 @@ app.post("/login", (req, res) => {
     let currentUser = users.filter((eachUser) => eachUser.userName === req.body.userName);
 
     if (currentUser) {
-        if (currentUser.password === req.body.password) {
+
+        // Verifying user given password to the hash of that password in the database
+        Bcrypt.varifyHash(req.body.password, currentUser.password)
+            .then(result => {
+                if (result) {
+                    let successfullyVerified = result;
+                    console.log("matched");
+                } else {
+                    successfullyVerified = false
+                    console.log("not matched");
+                }
+            }).catch(e => {
+                console.log("error: ", e)
+            })
+
+        if (successfullyVerified) {
 
             // make token using ip, browser name, 
             let tokenData = {
