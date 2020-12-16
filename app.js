@@ -44,15 +44,14 @@ app.post("/login", (req, res) => {
     let currentUser = users.filter((eachUser) => eachUser.userName === req.body.userName);
 
     if (currentUser) {
-
+        let passwordVerified = false
         // Verifying user given password to the hash of that password in the database
         Bcrypt.varifyHash(req.body.password, currentUser.password)
             .then(result => {
                 if (result) {
-                    let passwordVerified = result;
+                    return passwordVerified = result;
                     console.log("matched");
                 } else {
-                    passwordVerified = false
                     console.log("not matched");
                 }
             }).catch(e => {
@@ -90,6 +89,20 @@ app.post("/login", (req, res) => {
 })
 
 app.get("/profile/:token", (req, res, next) => {
+
+    if (!req.params.token) {
+        res.send("token is Missing")
+    }
+    let session = sessions.filter((eachSession) => eachSession.token === req.params.token)
+    res.send("Welcome to profile")
+    if (new Date().getTime() > session.expire) {
+        res.status(401).send("Token expired")
+        sessions = sessions.filter((eachSession) => eachSession.token !== req.params.token)
+    }
+}
+)
+
+app.get("/dashboard/:token", (req, res, next) => {
 
     if (!req.params.token) {
         res.send("token is Missing")
