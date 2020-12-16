@@ -49,8 +49,8 @@ app.post("/login", (req, res) => {
         Bcrypt.varifyHash(req.body.password, currentUser.password)
             .then(result => {
                 if (result) {
-                    return passwordVerified = result;
                     console.log("matched");
+                    return passwordVerified = result;
                 } else {
                     console.log("not matched");
                 }
@@ -90,29 +90,69 @@ app.post("/login", (req, res) => {
 
 app.get("/profile/:token", (req, res, next) => {
 
+    let session = sessions.filter((eachSession) => eachSession.token === req.params.token)
+
     if (!req.params.token) {
         res.send("token is Missing")
     }
-    let session = sessions.filter((eachSession) => eachSession.token === req.params.token)
-    res.send("Welcome to profile")
     if (new Date().getTime() > session.expire) {
         res.status(401).send("Token expired")
         sessions = sessions.filter((eachSession) => eachSession.token !== req.params.token)
     }
+    Bcrypt.validateHash(JSON.stringify(req.params.token))
+        .then(isValidHash => {
+            if (isValidHash) {
+                console.log("hash is valid")
+                Bcrypt.varifyHash(isValidHash, session.token)
+                    .then(hashVerified => {
+                        if (hashVerified) {
+
+                            res.send("Welcome to profile")
+
+                        } else {
+                            console.log("hash is not valid");
+                        }
+                    }).catch(e => {
+                        console.log("error: ", e)
+                    })
+            } else {
+                console.log("hash is invalid")
+            }
+        })
 }
 )
 
 app.get("/dashboard/:token", (req, res, next) => {
 
+    let session = sessions.filter((eachSession) => eachSession.token === req.params.token)
+
     if (!req.params.token) {
         res.send("token is Missing")
     }
-    let session = sessions.filter((eachSession) => eachSession.token === req.params.token)
-    res.send("Welcome to dashboard")
     if (new Date().getTime() > session.expire) {
         res.status(401).send("Token expired")
         sessions = sessions.filter((eachSession) => eachSession.token !== req.params.token)
     }
+    Bcrypt.validateHash(JSON.stringify(req.params.token))
+        .then(isValidHash => {
+            if (isValidHash) {
+                console.log("hash is valid")
+                Bcrypt.varifyHash(isValidHash, session.token)
+                    .then(hashVerified => {
+                        if (hashVerified) {
+
+                            res.send("Welcome to dashboard")
+
+                        } else {
+                            console.log("hash is not valid");
+                        }
+                    }).catch(e => {
+                        console.log("error: ", e)
+                    })
+            } else {
+                console.log("hash is invalid")
+            }
+        })
 }
 )
 
