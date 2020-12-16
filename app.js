@@ -13,13 +13,13 @@ app.use(useragent.express());
 app.use(bodyParser.json())
 
 let users = [
-    { id: 2, userName: "ali", password: 123 },
+    // { id: 2, userName: "ali", password: 123 },
 ]
 console.log("Users array", users)
 
 let sessions = [
-    { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
-    { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
+    // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
+    // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
 ]
 
 app.post("/signup", (req, res) => {
