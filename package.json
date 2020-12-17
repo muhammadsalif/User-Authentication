@@ -4,7 +4,7 @@
   "description": "simple login signup",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "cls && nodemon app.js"
   },
   "author": "Muhammad Salif",
   "license": "ISC",
