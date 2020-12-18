@@ -49,8 +49,7 @@ app.post("/login", (req, res) => {
         res.send("Username or password is Missing")
         return
     }
-    let currentUser = users.filter((eachUser) => eachUser.userName === req.body.userName);
-    currentUser = currentUser[0]
+    let currentUser = users.filter((eachUser) => eachUser.userName === req.body.userName)[0];
     console.log("Current user", currentUser)
 
     if (currentUser) {
