@@ -24,7 +24,9 @@ let sessions = [
 ]
 
 
-
+app.get("/", (req, res) => {
+    res.send("Hello world")
+})
 app.post("/signup", (req, res) => {
     if (!req.body || !req.body.userName || !req.body.password) {
         res.send("Information is missing")
