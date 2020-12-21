@@ -12,19 +12,32 @@ app.use(useragent.express());
 app.use(bodyParser.json())
 
 //////////////////////////////////////////////////////////////////////////////////////// 
+//////////////////////// DB connections
 let dbURI = "mongodb+srv://dbuser:dbpassword@cluster0.oh80q.mongodb.net/User-Authentication-System?retryWrites=true&w=majority"
 
 mongoose.connect(dbURI);
+
+// mongoose.set('useNewUrlParser', true);
+// mongoose.set('useFindAndModify', false);
+mongoose.set('useCreateIndex', true);
 
 mongoose.connection.on('connected', function () { //connected
     console.log("Mongoose is connected");
 });
 
+/////////////////////////// DB Models
+
 var userSchema = mongoose.Schema({
-    username: { type: String, required: true, unique: true },
+    userName: { type: String, required: true, unique: true },
     password: { type: String, required: true },
 });
 var users = mongoose.model("users", userSchema);
+
+var sessionSchema = mongoose.Schema({
+    token: { type: String },
+    expire: { type: String }
+})
+var sessions = mongoose.model("sessions", sessionSchema)
 
 //////////////////////////////////////////////////////////////////////////////////////// 
 
@@ -33,14 +46,15 @@ var users = mongoose.model("users", userSchema);
 // ]
 // console.log("Users array", users)
 
-let sessions = [
-    // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
-    // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
-]
+// let sessions = [
+//     // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
+//     // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
+// ]
 
 app.get("/", (req, res) => {
     res.send("Hello world")
 })
+
 app.post("/signup", (req, res) => {
     if (!req.body || !req.body.userName || !req.body.password) {
         res.send("Information is missing")
@@ -51,8 +65,8 @@ app.post("/signup", (req, res) => {
         .then(passwordHash => {
             // // Mongo
             users.create({
-                id: Math.ceil(Math.random() * 100),
-                username: req.body.userName,
+                // id: Math.ceil(Math.random() * 100),
+                userName: req.body.userName,
                 password: passwordHash
             }).then(() => {
                 res.send("Successfully signed up")
@@ -78,136 +92,163 @@ app.post("/login", (req, res) => {
         res.send("Username or password is Missing")
         return
     }
-    let currentUser = users.filter((eachUser) => eachUser.userName === req.body.userName)[0];
-    console.log("Current user", currentUser)
+    console.log("Req.body.username", req.body.userName)
+    console.log("Req.body.password", req.body.password)
 
-    if (currentUser) {
-        Bcrypt.varifyHash(JSON.stringify(req.body.password), currentUser.password)
-            .then(passwordVerified => {
-                console.log('password verified ', passwordVerified)
+    users.find({ userName: req.body.userName })
+        .then((currentUser) => {
+            currentUser = currentUser[0]
+            console.log("current user", currentUser)
+            console.log("Current user password hash from db", currentUser.password)
 
-                if (passwordVerified) {
-                    let tokenData = {
-                        ip: req.socket.remoteAddress,
-                        browserName: req.useragent.browser
-                    };
-                    console.log("Token daTa 1", JSON.stringify(tokenData))
+            if (currentUser) {
+                Bcrypt.varifyHash(JSON.stringify(req.body.password), currentUser.password)
+                    .then(passwordVerified => {
+                        console.log('password verified ', passwordVerified)
 
-                    Bcrypt.stringToHash(JSON.stringify(tokenData))
-                        .then(token => {
-                            sessions.push({
-                                id: currentUser.id,
-                                token: token,
-                                expire: new Date().getTime() + (1000 * 60)
-                            })
+                        if (passwordVerified) {
+                            let tokenData = {
+                                ip: req.socket.remoteAddress,
+                                browserName: req.useragent.browser
+                            };
+                            console.log("Token daTa 1", JSON.stringify(tokenData))
 
-                            console.log("Users sessions", sessions)
-                            res.json({ "token": token })
-                        })
-                } else {
-                    res.send("Password in invalid")
-                    console.log("Password is invalid");
-                }
-            }).catch(e => {
-                console.log("error: ", e)
-            })
-    } else {
-        res.send("Invalid username or password || user not found")
-    }
-})
+                            Bcrypt.stringToHash(JSON.stringify(tokenData))
+                                .then(token => {
+                                    sessions.create({
+                                        token: token,
+                                        expire: new Date().getTime() + (1000 * 60)
+                                    }).then(() => {
+                                        console.log("Users sessions", sessions)
+                                        res.json({ "token": token })
+                                    })
 
-app.get("/profile", (req, res) => {
-    let session = sessions.filter((eachSession) => eachSession.token === req.query.token)[0]
-    console.log("Sessions", sessions)
-    console.log("Current session", session)
+                                    // Local
+                                    // sessions.push({
+                                    //     id: currentUser._id,
+                                    //     token: token,
+                                    //     expire: new Date().getTime() + (1000 * 60)
+                                    // })
+                                    // console.log("Users sessions", sessions)
+                                    // res.json({ "token": token })
 
-    if (!req.query.token) {
-        res.send("token is Missing")
-    }
-    if (new Date().getTime() > session.expire) {
-        res.status(401).send("Token expired")
-        sessions = sessions.filter((eachSession) => eachSession.token !== req.query.token)
-    }
-    Bcrypt.validateHash(req.query.token)
-        .then(isValidTokenHash => {
-            console.log(isValidTokenHash)
-            if (isValidTokenHash) {
-                console.log("hash is valid")
-
-                let tokenData = {
-                    ip: req.socket.remoteAddress,
-                    browserName: req.useragent.browser
-                };
-
-                console.log("Token daTa 2", JSON.stringify(tokenData))
-
-                Bcrypt.varifyHash(JSON.stringify(tokenData), session.token)
-                    .then(hashVerified => {
-                        if (hashVerified) {
-
-                            res.send("Welcome to profile")
-
+                                })
                         } else {
-                            res.send("Hash is invalid")
-                            console.log("hash is not valid");
+                            res.send("Password in invalid")
+                            console.log("Password is invalid");
                         }
                     }).catch(e => {
                         console.log("error: ", e)
                     })
             } else {
-                res.send("Not valid token")
-                console.log("hash is invalid")
+                res.send("Invalid username or password || user not found")
             }
+        })
+    // Local storage user filtering
+    // let currentUser = users.filter((eachUser) => eachUser.userName === req.body.userName)[0];
+    // console.log("Current user", currentUser)
+
+})
+
+app.get("/profile", (req, res) => {
+    if (!req.query.token) {
+        res.send("token is Missing")
+    }
+    // Local
+    // let session = sessions.filter((eachSession) => eachSession.token === req.query.token)[0]
+    // console.log("Sessions", sessions)
+    // console.log("Current session", session)
+    sessions.find({ token: req.query.token })
+        .then((session) => {
+            session = session[0]
+            console.log("Indivisual session", session)
+
+            if (new Date().getTime() > session.expire) {
+                res.status(401).send("Token expired")
+            }
+            Bcrypt.validateHash(req.query.token)
+                .then(isValidTokenHash => {
+                    console.log(isValidTokenHash)
+                    if (isValidTokenHash) {
+                        console.log("hash is valid")
+
+                        let tokenData = {
+                            ip: req.socket.remoteAddress,
+                            browserName: req.useragent.browser
+                        };
+
+                        // console.log("Token daTa 2", JSON.stringify(tokenData))
+                        Bcrypt.varifyHash(JSON.stringify(tokenData), session.token)
+                            .then(hashVerified => {
+                                if (hashVerified) {
+
+                                    res.send("Welcome to profile")
+
+                                } else {
+                                    res.send("Hash is invalid")
+                                    console.log("hash is not valid");
+                                }
+                            }).catch(e => {
+                                console.log("error: ", e)
+                            })
+                    } else {
+                        res.send("Not valid token")
+                        console.log("hash is invalid")
+                    }
+                })
         })
 }
 )
 
 app.get("/dashboard", (req, res) => {
-    let session = sessions.filter((eachSession) => eachSession.token === req.query.token)[0]
-    console.log("Sessions", sessions)
-    console.log("Current session", session)
-
     if (!req.query.token) {
         res.send("token is Missing")
     }
-    if (new Date().getTime() > session.expire) {
-        res.status(401).send("Token expired")
-        sessions = sessions.filter((eachSession) => eachSession.token !== req.query.token)
-    }
-    Bcrypt.validateHash(req.query.token)
-        .then(isValidTokenHash => {
-            console.log(isValidTokenHash)
-            if (isValidTokenHash) {
-                console.log("hash is valid")
 
-                let tokenData = {
-                    ip: req.socket.remoteAddress,
-                    browserName: req.useragent.browser
-                };
+    // Local storage
+    // let session = sessions.filter((eachSession) => eachSession.token === req.query.token)[0]
+    // console.log("Sessions", sessions)
+    // console.log("Current session", session)
 
-                console.log("Token daTa 2", JSON.stringify(tokenData))
-
-                Bcrypt.varifyHash(JSON.stringify(tokenData), session.token)
-                    .then(hashVerified => {
-                        if (hashVerified) {
-
-                            res.send("Welcome to Dashboard")
-
-                        } else {
-                            res.send("Hash is invalid")
-                            console.log("hash is not valid");
-                        }
-                    }).catch(e => {
-                        console.log("error: ", e)
-                    })
-            } else {
-                res.send("Not valid token")
-                console.log("hash is invalid")
+    sessions.find({ token: req.query.token })
+        .then((session) => {
+            if (new Date().getTime() > session.expire) {
+                res.status(401).send("Token expired")
             }
+            Bcrypt.validateHash(req.query.token)
+                .then(isValidTokenHash => {
+                    console.log(isValidTokenHash)
+                    if (isValidTokenHash) {
+                        console.log("hash is valid")
+
+                        let tokenData = {
+                            ip: req.socket.remoteAddress,
+                            browserName: req.useragent.browser
+                        };
+
+                        // console.log("Token daTa 2", JSON.stringify(tokenData))
+
+                        Bcrypt.varifyHash(JSON.stringify(tokenData), session.token)
+                            .then(hashVerified => {
+                                if (hashVerified) {
+
+                                    res.send("Welcome to Dashboard")
+
+                                } else {
+                                    res.send("Hash is invalid")
+                                    console.log("hash is not valid");
+                                }
+                            }).catch(e => {
+                                console.log("error: ", e)
+                            })
+                    } else {
+                        res.send("Not valid token")
+                        console.log("hash is invalid")
+                    }
+                })
         })
 }
 )
-
 
 app.listen(port, () => {
     console.log("Server is running at port ", port)
