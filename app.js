@@ -2,9 +2,8 @@ let express = require("express");
 let app = express();
 let port = process.env.PORT || 5000;
 let bodyParser = require('body-parser')
-
+const mongoose = require("mongoose");
 let Bcrypt = require("bcrypt-inzi");
-
 let useragent = require('express-useragent');
 
 app.use(useragent.express());
@@ -12,17 +11,32 @@ app.use(useragent.express());
 // parse application/json
 app.use(bodyParser.json())
 
-let users = [
-    // { userName: "Muhammad Salif", password: 123456 }
-    // { id: 2, userName: "ali", password: 123 },
-]
-console.log("Users array", users)
+//////////////////////////////////////////////////////////////////////////////////////// 
+let dbURI = "mongodb+srv://dbuser:dbpassword@cluster0.oh80q.mongodb.net/User-Authentication-System?retryWrites=true&w=majority"
+
+mongoose.connect(dbURI);
+
+mongoose.connection.on('connected', function () { //connected
+    console.log("Mongoose is connected");
+});
+
+var userSchema = mongoose.Schema({
+    username: { type: String, required: true, unique: true },
+    password: { type: String, required: true },
+});
+var users = mongoose.model("users", userSchema);
+
+//////////////////////////////////////////////////////////////////////////////////////// 
+
+// let users = [
+//     // { userName: "Muhammad Salif", password: 123456 }
+// ]
+// console.log("Users array", users)
 
 let sessions = [
     // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
     // { id: 2, token: "sdfrwerfew54er2rfwerwrw", expire: 1607424594798 },
 ]
-
 
 app.get("/", (req, res) => {
     res.send("Hello world")
@@ -35,13 +49,26 @@ app.post("/signup", (req, res) => {
     }
     Bcrypt.stringToHash(JSON.stringify(req.body.password))
         .then(passwordHash => {
-            users.push({
+            // // Mongo
+            users.create({
                 id: Math.ceil(Math.random() * 100),
-                userName: req.body.userName,
+                username: req.body.userName,
                 password: passwordHash
+            }).then(() => {
+                res.send("Successfully signed up")
+                console.log('Successfully sign up')
+            }).catch(() => {
+                res.send("Sign Up Error")
+                console.log('Sign Up Error')
             })
-            res.send("SignUp Successfully")
-            console.log("User Signup successfully :", req.body.userName)
+            // // Local
+            // users.push({
+            // id: Math.ceil(Math.random() * 100),
+            //     userName: req.body.userName,
+            //     password: passwordHash
+            // })
+            // res.send("SignUp Successfully")
+            // console.log("User Signup successfully :", req.body.userName)
         })
 })
 

@@ -4,8 +4,7 @@
   "description": "simple login signup",
   "main": "index.js",
   "scripts": {
-    "start": "node app.js",
-    "start-dev": "cls && nodemon app.js"
+    "start": "node app.js"
   },
   "author": "Muhammad Salif",
   "license": "ISC",
@@ -13,6 +12,7 @@
     "bcrypt-inzi": "^1.0.7",
     "body-parser": "^1.19.0",
     "express": "^4.17.1",
-    "express-useragent": "^1.0.15"
+    "express-useragent": "^1.0.15",
+    "mongoose": "^5.11.8"
   }
 }
