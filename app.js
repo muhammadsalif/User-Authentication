@@ -212,6 +212,7 @@ app.get("/dashboard", (req, res) => {
 
     sessions.find({ token: req.query.token })
         .then((session) => {
+            session = session[0]
             if (new Date().getTime() > session.expire) {
                 res.status(401).send("Token expired")
             }
